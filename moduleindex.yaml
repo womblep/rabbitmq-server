@@ -572,6 +572,7 @@ rabbit:
 - rabbit_channel_sup_sup
 - rabbit_channel_tracking
 - rabbit_channel_tracking_handler
+- rabbit_chaos
 - rabbit_classic_queue
 - rabbit_classic_queue_index_v2
 - rabbit_classic_queue_store_v2
