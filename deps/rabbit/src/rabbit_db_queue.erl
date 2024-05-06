@@ -919,8 +919,9 @@ set_in_khepri(Q) ->
 %% set_many().
 %% -------------------------------------------------------------------
 
--spec set_many([Queue]) -> ok when
-      Queue :: amqqueue:amqqueue().
+-spec set_many([Queue]) -> Ret when
+      Queue :: amqqueue:amqqueue(),
+      Ret :: ok | rabbit_khepri:timeout_error().
 %% @doc Writes a list of durable queue records.
 %%
 %% It is responsibility of the calling function to ensure all records are
@@ -957,9 +958,9 @@ set_many_in_khepri(Qs) ->
                        ok      -> ok;
                        Error   -> khepri_tx:abort(Error)
                    end
-               end || Q <- Qs]
-      end),
-    ok.
+               end || Q <- Qs],
+               ok
+      end).
 
 %% -------------------------------------------------------------------
 %% delete_transient().
