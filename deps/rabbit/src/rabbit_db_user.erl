@@ -12,6 +12,8 @@
 -include_lib("khepri/include/khepri.hrl").
 -include_lib("rabbit_common/include/rabbit.hrl").
 
+-include("include/khepri.hrl").
+
 -export([create/1,
          update/2,
          get/1,
@@ -1048,11 +1050,13 @@ clear_in_khepri() ->
 %% Paths
 %% --------------------------------------------------------------
 
-khepri_users_path()        -> [?MODULE, users].
-khepri_user_path(Username) -> [?MODULE, users, Username].
+khepri_users_path()        -> ?KHEPRI_ROOT_PATH ++ [users].
+khepri_user_path(Username) -> khepri_users_path() ++ [Username].
 
 khepri_user_permission_path(Username, VHostName) ->
-    [?MODULE, users, Username, user_permissions, VHostName].
+    (rabbit_db_vhost:khepri_vhost_path(VHostName) ++
+     [user_permissions, Username]).
 
 khepri_topic_permission_path(Username, VHostName, Exchange) ->
-    [?MODULE, users, Username, topic_permissions, VHostName, Exchange].
+    (rabbit_db_exchange:khepri_exchange_path(VHostName, Exchange) ++
+     [user_permissions, Username]).

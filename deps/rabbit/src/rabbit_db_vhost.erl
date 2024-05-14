@@ -12,6 +12,7 @@
 -include_lib("rabbit_common/include/logging.hrl").
 -include_lib("khepri/include/khepri.hrl").
 
+-include("include/khepri.hrl").
 -include("vhost.hrl").
 
 -export([create_or_get/3,
@@ -481,5 +482,5 @@ clear_in_khepri() ->
 %% Paths
 %% --------------------------------------------------------------
 
-khepri_vhosts_path()     -> [?MODULE].
-khepri_vhost_path(VHost) -> [?MODULE, VHost].
+khepri_vhosts_path()     -> ?KHEPRI_ROOT_PATH ++ [vhosts].
+khepri_vhost_path(VHost) -> khepri_vhosts_path() ++ [VHost].
