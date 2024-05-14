@@ -85,8 +85,9 @@ get_all_in_mnesia() ->
 get_all_in_khepri() ->
     rabbit_db:list_in_khepri(
       khepri_exchange_path(
-        rabbit_khepri:if_has_data_wildcard(),
-        rabbit_khepri:if_has_data_wildcard())).
+        ?KHEPRI_WILDCARD_STAR,
+        #if_all{conditions = [?KHEPRI_WILDCARD_STAR,
+                              #if_has_data{has_data = true}]})).
 
 -spec get_all(VHostName) -> [Exchange] when
       VHostName :: vhost:name(),
@@ -111,7 +112,8 @@ get_all_in_khepri(VHost) ->
     rabbit_db:list_in_khepri(
       khepri_exchange_path(
         VHost,
-        rabbit_khepri:if_has_data_wildcard())).
+        #if_all{conditions = [?KHEPRI_WILDCARD_STAR,
+                              #if_has_data{has_data = true}]})).
 
 %% -------------------------------------------------------------------
 %% get_all_durable().
@@ -160,8 +162,9 @@ list_in_mnesia() ->
 
 list_in_khepri() ->
     PathPattern = khepri_exchange_path(
-                    rabbit_khepri:if_has_data_wildcard(),
-                    rabbit_khepri:if_has_data_wildcard()),
+                    ?KHEPRI_WILDCARD_STAR,
+                    #if_all{conditions = [?KHEPRI_WILDCARD_STAR,
+                                          #if_has_data{has_data = true}]}),
     case rabbit_khepri:match(PathPattern) of
         {ok, Map} ->
             maps:fold(fun(_K, X, Acc) -> [X#exchange.name | Acc] end, [], Map);

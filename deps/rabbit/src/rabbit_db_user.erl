@@ -456,7 +456,7 @@ set_user_permissions_in_khepri_tx(Username, VHostName, UserPermission) ->
              Username,
              VHostName),
     Extra = #{keep_while =>
-                  #{rabbit_db_vhost:khepri_vhost_path(VHostName) =>
+                  #{rabbit_db_user:khepri_user_path(Username) =>
                         #if_node_exists{exists = true}}},
     Ret = khepri_tx:put(
             Path, UserPermission, Extra),
@@ -841,7 +841,7 @@ set_topic_permissions_in_khepri_tx(Username, VHostName, TopicPermission) ->
              VHostName,
              ExchangeName),
     Extra = #{keep_while =>
-                  #{rabbit_db_vhost:khepri_vhost_path(VHostName) =>
+                  #{rabbit_db_user:khepri_user_path(Username) =>
                         #if_node_exists{exists = true}}},
     Ret = khepri_tx:put(Path, TopicPermission, Extra),
     case Ret of
