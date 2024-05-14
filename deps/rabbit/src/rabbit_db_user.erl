@@ -31,7 +31,8 @@
          clear_topic_permissions/3,
          clear_matching_topic_permissions/3,
          delete/1,
-         clear_all_permissions_for_vhost/1]).
+         clear_all_permissions_for_vhost/1,
+         clear_in_khepri/0]).
 
 -export([khepri_users_path/0,
          khepri_user_path/1,

@@ -28,7 +28,8 @@
          delete/1]).
 
 -export([khepri_vhost_path/1,
-         khepri_vhosts_path/0]).
+         khepri_vhosts_path/0,
+         khepri_vhost_path_to_name/1]).
 
 %% For testing
 -export([clear/0]).
@@ -484,3 +485,8 @@ clear_in_khepri() ->
 
 khepri_vhosts_path()     -> ?KHEPRI_ROOT_PATH ++ [vhosts].
 khepri_vhost_path(VHost) -> khepri_vhosts_path() ++ [VHost].
+
+khepri_vhost_path_to_name(Path) ->
+    Prefix = ?KHEPRI_ROOT_PATH,
+    {Prefix, [vhosts, VHost | _]} = lists:split(length(Prefix), Path),
+    VHost.

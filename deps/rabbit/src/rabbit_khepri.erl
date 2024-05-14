@@ -1093,33 +1093,27 @@ register_projections() ->
 
 register_rabbit_exchange_projection() ->
     Name = rabbit_khepri_exchange,
-    PathPattern = [rabbit_db_exchange,
-                   exchanges,
-                   _VHost = ?KHEPRI_WILDCARD_STAR,
-                   _Name = ?KHEPRI_WILDCARD_STAR],
+    PathPattern = rabbit_db_exchange:khepri_exchange_path(
+                    ?KHEPRI_WILDCARD_STAR, ?KHEPRI_WILDCARD_STAR),
     KeyPos = #exchange.name,
     register_simple_projection(Name, PathPattern, KeyPos).
 
 register_rabbit_queue_projection() ->
     Name = rabbit_khepri_queue,
-    PathPattern = [rabbit_db_queue,
-                   queues,
-                   _VHost = ?KHEPRI_WILDCARD_STAR,
-                   _Name = ?KHEPRI_WILDCARD_STAR],
+    PathPattern = rabbit_db_queue:khepri_queue_path(
+                    ?KHEPRI_WILDCARD_STAR, ?KHEPRI_WILDCARD_STAR),
     KeyPos = 2, %% #amqqueue.name
     register_simple_projection(Name, PathPattern, KeyPos).
 
 register_rabbit_vhost_projection() ->
     Name = rabbit_khepri_vhost,
-    PathPattern = [rabbit_db_vhost, _VHost = ?KHEPRI_WILDCARD_STAR],
+    PathPattern = rabbit_db_vhost:khepri_vhost_path(?KHEPRI_WILDCARD_STAR),
     KeyPos = 2, %% #vhost.virtual_host
     register_simple_projection(Name, PathPattern, KeyPos).
 
 register_rabbit_users_projection() ->
     Name = rabbit_khepri_users,
-    PathPattern = [rabbit_db_user,
-                   users,
-                   _UserName = ?KHEPRI_WILDCARD_STAR],
+    PathPattern = rabbit_db_user:khepri_user_path(?KHEPRI_WILDCARD_STAR),
     KeyPos = 2, %% #internal_user.username
     register_simple_projection(Name, PathPattern, KeyPos).
 
@@ -1132,11 +1126,8 @@ register_rabbit_runtime_parameters_projection() ->
 
 register_rabbit_user_permissions_projection() ->
     Name = rabbit_khepri_user_permissions,
-    PathPattern = [rabbit_db_user,
-                   users,
-                   _UserName = ?KHEPRI_WILDCARD_STAR,
-                   user_permissions,
-                   _VHost = ?KHEPRI_WILDCARD_STAR],
+    PathPattern = rabbit_db_user:khepri_user_permission_path(
+                    ?KHEPRI_WILDCARD_STAR, ?KHEPRI_WILDCARD_STAR),
     KeyPos = #user_permission.user_vhost,
     register_simple_projection(Name, PathPattern, KeyPos).
 
