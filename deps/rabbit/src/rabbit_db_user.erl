@@ -451,10 +451,9 @@ set_user_permissions_in_khepri(Username, VHostName, UserPermission) ->
           end)), rw).
 
 set_user_permissions_in_khepri_tx(Username, VHostName, UserPermission) ->
+    %% TODO: Check user presence in a transaction.
     Path = khepri_user_permission_path(
-             #if_all{conditions =
-                         [Username,
-                          #if_node_exists{exists = true}]},
+             Username,
              VHostName),
     Extra = #{keep_while =>
                   #{rabbit_db_vhost:khepri_vhost_path(VHostName) =>
@@ -836,10 +835,9 @@ set_topic_permissions_in_khepri(Username, VHostName, TopicPermission) ->
 set_topic_permissions_in_khepri_tx(Username, VHostName, TopicPermission) ->
     #topic_permission{topic_permission_key =
                           #topic_permission_key{exchange = ExchangeName}} = TopicPermission,
+    %% TODO: Check user presence in a transaction.
     Path = khepri_topic_permission_path(
-             #if_all{conditions =
-                         [Username,
-                          #if_node_exists{exists = true}]},
+             Username,
              VHostName,
              ExchangeName),
     Extra = #{keep_while =>
