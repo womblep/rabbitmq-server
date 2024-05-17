@@ -102,9 +102,14 @@ end_per_testcase(Testcase, Config) ->
 join_khepri_khepri_cluster(Config) ->
     Servers = rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag( Config, Servers, khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, Servers, khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_2_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_2_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -112,9 +117,14 @@ join_khepri_mnesia_cluster(Config) ->
     [Server0, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_2_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_2_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -122,9 +132,10 @@ join_khepri_mnesia_cluster_reverse(Config) ->
     [Server0, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0], khepri_db),
     case Ret of
-        ok               -> join_size_2_cluster(Config, lists:reverse(Servers));
+        ok -> join_size_2_cluster(Config, lists:reverse(Servers));
         {skip, _} = Skip -> Skip
     end.
 
@@ -132,9 +143,10 @@ join_mnesia_khepri_cluster(Config) ->
     [_, Server1] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1], khepri_db),
     case Ret of
-        ok               -> join_size_2_cluster(Config, Servers);
+        ok -> join_size_2_cluster(Config, Servers);
         {skip, _} = Skip -> Skip
     end.
 
@@ -142,18 +154,24 @@ join_mnesia_khepri_cluster_reverse(Config) ->
     [_, Server1] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1], khepri_db),
     case Ret of
-        ok               -> join_size_2_cluster(Config, lists:reverse(Servers));
+        ok -> join_size_2_cluster(Config, lists:reverse(Servers));
         {skip, _} = Skip -> Skip
     end.
 
 join_khepri_khepri_khepri_cluster(Config) ->
     Servers = rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, Servers, khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, Servers, khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -161,19 +179,26 @@ join_mnesia_khepri_khepri_cluster(Config) ->
     [_, Server1, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1, Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1, Server2], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok -> join_size_3_cluster(Config, Servers);
         {skip, _} = Skip -> Skip
     end.
 
 join_mnesia_khepri_khepri_cluster_reverse(Config) ->
     [_, Server1, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
+    RevServers = lists:reverse(Servers),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1, Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1, Server2], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, RevServers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -181,19 +206,30 @@ join_khepri_mnesia_khepri_cluster(Config) ->
     [Server0, _, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0, Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0, Server2], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
 join_khepri_mnesia_khepri_cluster_reverse(Config) ->
     [Server0, _, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
+    RevServers = lists:reverse(Servers),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0, Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0, Server2], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, RevServers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -201,9 +237,14 @@ join_khepri_khepri_mnesia_cluster(Config) ->
     [Server0, Server1, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0, Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0, Server1], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -211,9 +252,10 @@ join_khepri_khepri_mnesia_cluster_reverse(Config) ->
     [Server0, Server1, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0, Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0, Server1], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok -> join_size_3_cluster(Config, lists:reverse(Servers));
         {skip, _} = Skip -> Skip
     end.
 
@@ -221,19 +263,26 @@ join_mnesia_mnesia_khepri_cluster(Config) ->
     [_, _, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server2], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok -> join_size_3_cluster(Config, Servers);
         {skip, _} = Skip -> Skip
     end.
 
 join_mnesia_mnesia_khepri_cluster_reverse(Config) ->
     [_, _, Server2] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
+    RevServers = lists:reverse(Servers),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server2], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server2], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, RevServers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -241,9 +290,10 @@ join_mnesia_khepri_mnesia_cluster(Config) ->
     [_, Server1, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok -> join_size_3_cluster(Config, Servers);
         {skip, _} = Skip -> Skip
     end.
 
@@ -251,9 +301,10 @@ join_mnesia_khepri_mnesia_cluster_reverse(Config) ->
     [_, Server1, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server1], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server1], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok -> join_size_3_cluster(Config, lists:reverse(Servers));
         {skip, _} = Skip -> Skip
     end.
 
@@ -261,9 +312,14 @@ join_khepri_mnesia_mnesia_cluster(Config) ->
     [Server0, _, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0], khepri_db),
+    MacVersAreEqual = (
+      rabbit_ct_broker_helpers:do_khepri_state_machines_use_same_version(
+        Config, Servers)),
     case Ret of
-        ok               -> join_size_3_cluster(Config, Servers);
+        ok when MacVersAreEqual -> join_size_3_cluster(Config, Servers);
+        ok -> {skip, "Khepri state machine versions differ"};
         {skip, _} = Skip -> Skip
     end.
 
@@ -271,9 +327,10 @@ join_khepri_mnesia_mnesia_cluster_reverse(Config) ->
     [Server0, _, _] = Servers =
         rabbit_ct_broker_helpers:get_node_configs(Config, nodename),
 
-    Ret = rabbit_ct_broker_helpers:enable_feature_flag(Config, [Server0], khepri_db),
+    Ret = rabbit_ct_broker_helpers:enable_feature_flag(
+            Config, [Server0], khepri_db),
     case Ret of
-        ok               -> join_size_3_cluster(Config, lists:reverse(Servers));
+        ok -> join_size_3_cluster(Config, lists:reverse(Servers));
         {skip, _} = Skip -> Skip
     end.
 
@@ -287,7 +344,8 @@ join_size_2_cluster(Config, [Server0, Server1]) ->
     ok = rabbit_control_helper:command(stop_app, Server1),
     ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
 
-    Ret = rabbit_control_helper:command(join_cluster, Server1, [atom_to_list(Server0)], []),
+    Ret = rabbit_control_helper:command(
+            join_cluster, Server1, [atom_to_list(Server0)], []),
     case Ret of
         ok ->
             ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
@@ -308,7 +366,8 @@ join_size_3_cluster(Config, [Server0, Server1, Server2]) ->
     ok = rabbit_control_helper:command(stop_app, Server1),
     ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
 
-    Ret1 = rabbit_control_helper:command(join_cluster, Server1, [atom_to_list(Server0)], []),
+    Ret1 = rabbit_control_helper:command(
+             join_cluster, Server1, [atom_to_list(Server0)], []),
     case Ret1 of
         ok ->
             ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
@@ -319,13 +378,18 @@ join_size_3_cluster(Config, [Server0, Server1, Server2]) ->
             ok = rabbit_control_helper:command(stop_app, Server2),
             ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
 
-            Ret2 = rabbit_control_helper:command(join_cluster, Server2, [atom_to_list(Server0)], []),
+            Ret2 = rabbit_control_helper:command(
+                     join_cluster, Server2, [atom_to_list(Server0)], []),
             case Ret2 of
                 ok ->
-                    ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, [])),
+                    ?assertMatch(
+                       [_],
+                       rpc:call(Server0, rabbit_amqqueue, list, [])),
 
                     ok = rabbit_control_helper:command(start_app, Server2),
-                    ?assertMatch([_], rpc:call(Server0, rabbit_amqqueue, list, []));
+                    ?assertMatch(
+                       [_],
+                       rpc:call(Server0, rabbit_amqqueue, list, []));
                 {error, 69, <<"Error:\nincompatible_feature_flags">>} ->
                     {skip, "'khepri_db' feature flag is unsupported"}
             end;
