@@ -9,7 +9,7 @@
 -include_lib("proper/include/proper.hrl").
 -include_lib("common_test/include/ct.hrl").
 -include_lib("eunit/include/eunit.hrl").
-
+-include_lib("rabbit/src/rabbit_fifo.hrl").
 
 all() ->
     [
@@ -51,23 +51,24 @@ end_per_testcase(_TestCase, _Config) ->
 %%% Test cases
 %%%===================================================================
 
+-define(MSG(L), ?MSG(L, L)).
 basics(_Config) ->
     Q0 = rabbit_fifo_q:new(),
     Q1 = lists:foldl(
            fun ({P, I}, Q) ->
                    rabbit_fifo_q:in(P, I, Q)
            end, Q0, [
-                     {hi, hi1},
-                     {lo, lo1},
-                     {hi, hi2},
-                     {lo, lo2},
-                     {hi, hi3}
+                     {hi, ?MSG(?LINE)},
+                     {lo, ?MSG(?LINE)},
+                     {hi, ?MSG(?LINE)},
+                     {lo, ?MSG(?LINE)},
+                     {hi, ?MSG(?LINE)}
                     ]),
-    {{value, hi1}, Q2} = rabbit_fifo_q:out(Q1),
-    {{value, hi2}, Q3} = rabbit_fifo_q:out(Q2),
-    {{value, lo1}, Q4} = rabbit_fifo_q:out(Q3),
-    {{value, hi3}, Q5} = rabbit_fifo_q:out(Q4),
-    {{value, lo2}, _Q6} = rabbit_fifo_q:out(Q5),
+    {hi, _, Q2} = rabbit_fifo_q:out(Q1),
+    {hi, _, Q3} = rabbit_fifo_q:out(Q2),
+    {lo, _, Q4} = rabbit_fifo_q:out(Q3),
+    {hi, _, Q5} = rabbit_fifo_q:out(Q4),
+    {lo, _, _Q6} = rabbit_fifo_q:out(Q5),
     ok.
 
 
@@ -98,7 +99,7 @@ queue_prop(P, Ops) ->
                                end;
                            (out, {Q0, S0}) ->
                                {V1, Q} = queue:out(Q0),
-                               {V2, S} = rabbit_fifo_q:out(S0),
+                               {_, V2, S} = rabbit_fifo_q:out(S0),
                                case V1 == V2 of
                                    true ->
                                        {Q, S};
