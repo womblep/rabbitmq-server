@@ -13,11 +13,13 @@
          ]).
 
 -define(WEIGHT, 2).
+-define(NON_EMPTY, {_, [_|_]}).
+-define(EMPTY, {[], []}).
 
-%% a simple weighted priority queue with only two priorities
+%% a weighted priority queue with only two priorities
 
--record(?MODULE, {hi = queue:new() :: queue:queue(),
-                  lo = queue:new() :: queue:queue(),
+-record(?MODULE, {hi = ?EMPTY :: {list(msg()), list(msg())},
+                  lo = ?EMPTY :: {list(msg()), list(msg())},
                   len = 0 :: non_neg_integer(),
                   dequeue_counter = 0 :: non_neg_integer()}).
 
@@ -31,73 +33,44 @@ new() ->
 
 -spec in(hi | lo, msg(), state()) -> state().
 in(hi, Item, #?MODULE{hi = Hi, len = Len} = State) ->
-    State#?MODULE{hi = queue:in(Item, Hi),
+    State#?MODULE{hi = in(Item, Hi),
                   len = Len + 1};
 in(lo, Item, #?MODULE{lo = Lo, len = Len} = State) ->
-    State#?MODULE{lo = queue:in(Item, Lo),
+    State#?MODULE{lo = in(Item, Lo),
                   len = Len + 1}.
 
 -spec out(state()) ->
-    {empty, state()} | {hi | lo, msg(), state()}.
+    {empty, state()} |
+    {hi | lo, msg(), state()}.
 out(#?MODULE{len = 0} = S) ->
     {empty, S};
 out(#?MODULE{hi = Hi0,
              lo = Lo0,
              len = Len,
-             dequeue_counter = C} = State) ->
-    case ?WEIGHT == C of
-        true ->
-            %% try lo before hi
-            case queue:out(Lo0) of
-                {empty, _} ->
-                    {{value, Ret}, Hi} = queue:out(Hi0),
-                    {hi, Ret, State#?MODULE{hi = Hi,
-                                            dequeue_counter = 0,
-                                            len = Len - 1}};
-                {{value, Ret}, Lo} ->
-                    {lo, Ret, State#?MODULE{lo = Lo,
-                                            dequeue_counter = 0,
-                                            len = Len - 1}}
-            end;
-        false ->
-            case queue:out(Hi0) of
-                {empty, _} ->
-                    {{value, Ret}, Lo} = queue:out(Lo0),
-                    {lo, Ret, State#?MODULE{lo = Lo,
-                                            dequeue_counter = C + 1,
-                                            len = Len - 1}};
-                {{value, Ret}, Hi} ->
-                    {hi, Ret, State#?MODULE{hi = Hi,
-                                            dequeue_counter = C + 1,
-                                            len = Len - 1}}
-            end
+             dequeue_counter = C0} = State) ->
+    C = case C0 of
+            ?WEIGHT ->
+                0;
+            _ ->
+                C0 + 1
+        end,
+    case next(State) of
+        {hi, Msg} ->
+            {hi, Msg, State#?MODULE{hi = drop(Hi0),
+                                    dequeue_counter = C,
+                                    len = Len - 1}};
+        {lo, Msg} ->
+            {lo, Msg, State#?MODULE{lo = drop(Lo0),
+                                    dequeue_counter = C,
+                                    len = Len - 1}}
     end.
 
 -spec get(state()) -> empty | msg().
 get(#?MODULE{len = 0}) ->
     empty;
-get(#?MODULE{hi = Hi0,
-             lo = Lo0,
-             dequeue_counter = C}) ->
-    case ?WEIGHT == C of
-        true ->
-            %% try lo before hi
-            case queue:peek(Lo0) of
-                empty ->
-                    {value, Ret} = queue:peek(Hi0),
-                    Ret;
-                {value, Ret} ->
-                    Ret
-            end;
-        false ->
-            case queue:peek(Hi0) of
-                empty ->
-                    {value, Ret} = queue:peek(Lo0),
-                    Ret;
-                {value, Ret} ->
-                    Ret
-            end
-    end.
+get(#?MODULE{} = State) ->
+    {_, Msg} = next(State),
+    Msg.
 
 -spec len(state()) -> non_neg_integer().
 len(#?MODULE{len = Len}) ->
@@ -122,13 +95,13 @@ normalize(Q0, Acc) ->
 get_lowest_index(#?MODULE{len = 0}) ->
     undefined;
 get_lowest_index(#?MODULE{hi = Hi, lo = Lo}) ->
-    case queue:peek(Hi) of
+    case peek(Hi) of
         empty ->
-            {value, ?MSG(LoIdx, _)} = queue:peek(Lo),
+            ?MSG(LoIdx, _) = peek(Lo),
             LoIdx;
-        {value, ?MSG(HiIdx, _)} ->
-            case queue:peek(Lo) of
-                {value, ?MSG(LoIdx, _)} ->
+        ?MSG(HiIdx, _) ->
+            case peek(Lo) of
+                ?MSG(LoIdx, _) ->
                     max(HiIdx, LoIdx);
                 empty ->
                     HiIdx
@@ -137,4 +110,41 @@ get_lowest_index(#?MODULE{hi = Hi, lo = Lo}) ->
 
 %% internals
 
+next(#?MODULE{hi = ?NON_EMPTY = Hi,
+              lo = ?NON_EMPTY  = Lo,
+              dequeue_counter = ?WEIGHT}) ->
+    ?MSG(HiIdx, _) = HiMsg = peek(Hi),
+    ?MSG(LoIdx, _) = LoMsg = peek(Lo),
+    %% always favour hi priority messages when it is safe to do so,
+    %% i.e. the index is lower than the next index for the lo queue
+    case HiIdx < LoIdx of
+        true ->
+            {hi, HiMsg};
+        false ->
+            {lo, LoMsg}
+    end;
+next(#?MODULE{hi = ?NON_EMPTY = Hi}) ->
+    {hi, peek(Hi)};
+next(#?MODULE{lo = Lo}) ->
+    {lo, peek(Lo)}.
 
+%% invariant, if the queue is non empty so is the Out (right) list.
+in(X, ?EMPTY) ->
+    {[], [X]};
+in(X, {[_] = In, []}) ->
+    {[X], In};
+in(X, {In, Out}) ->
+    {[X | In], Out}.
+
+peek(?EMPTY) ->
+    empty;
+peek({_, [H | _]}) ->
+    H.
+
+drop(?EMPTY = Q) ->
+    Q;
+drop({In, [_]}) ->
+    %% the last Out one
+    {[], lists:reverse(In)};
+drop({In, [_ | Out]}) ->
+    {In, Out}.

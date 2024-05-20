@@ -19,7 +19,9 @@ all() ->
 
 all_tests() ->
     [
+     hi,
      basics,
+     hi_is_prioritised,
      single_priority_behaves_like_queue
     ].
 
@@ -52,6 +54,19 @@ end_per_testcase(_TestCase, _Config) ->
 %%%===================================================================
 
 -define(MSG(L), ?MSG(L, L)).
+
+hi(_Config) ->
+    Q0 = rabbit_fifo_q:new(),
+    Q1 = lists:foldl(
+           fun ({P, I}, Q) ->
+                   rabbit_fifo_q:in(P, I, Q)
+          end, Q0, [
+                     {hi, ?MSG(?LINE)}
+                    ]),
+    {hi, _, Q2} = rabbit_fifo_q:out(Q1),
+    {empty, _Q3} = rabbit_fifo_q:out(Q2),
+    ok.
+
 basics(_Config) ->
     Q0 = rabbit_fifo_q:new(),
     Q1 = lists:foldl(
@@ -68,10 +83,32 @@ basics(_Config) ->
     {hi, _, Q3} = rabbit_fifo_q:out(Q2),
     {lo, _, Q4} = rabbit_fifo_q:out(Q3),
     {hi, _, Q5} = rabbit_fifo_q:out(Q4),
-    {lo, _, _Q6} = rabbit_fifo_q:out(Q5),
+    {lo, _, Q6} = rabbit_fifo_q:out(Q5),
+    {empty, _} = rabbit_fifo_q:out(Q6),
     ok.
 
+hi_is_prioritised(_Config) ->
+    Q0 = rabbit_fifo_q:new(),
+    %% when `hi' has a lower index than the next lo then it is still
+    %% prioritied (as this is safe to do).
+    Q1 = lists:foldl(
+           fun ({P, I}, Q) ->
+                   rabbit_fifo_q:in(P, I, Q)
+           end, Q0, [
+                     {hi, ?MSG(1, ?LINE)},
+                     {hi, ?MSG(2, ?LINE)},
+                     {hi, ?MSG(3, ?LINE)},
+                     {hi, ?MSG(4, ?LINE)},
+                     {lo, ?MSG(5, ?LINE)}
+                    ]),
+    {hi, _, Q2} = rabbit_fifo_q:out(Q1),
+    {hi, _, Q3} = rabbit_fifo_q:out(Q2),
+    {hi, _, Q4} = rabbit_fifo_q:out(Q3),
+    {hi, _, Q5} = rabbit_fifo_q:out(Q4),
+    {lo, _, Q6} = rabbit_fifo_q:out(Q5),
+    {empty, _} = rabbit_fifo_q:out(Q6),
 
+    ok.
 
 -type op() :: {in, integer()} | out.
 
@@ -84,7 +121,7 @@ single_priority_behaves_like_queue(_Config) ->
     ok.
 
 queue_prop(P, Ops) ->
-    ct:pal("Running queue_prop for ~s", [P]),
+    % ct:pal("Running queue_prop for ~s", [Ops]),
     Que = queue:new(),
     Sut = rabbit_fifo_q:new(),
     {Queue, FifoQ} = lists:foldl(
@@ -98,12 +135,23 @@ queue_prop(P, Ops) ->
                                        throw(false)
                                end;
                            (out, {Q0, S0}) ->
-                               {V1, Q} = queue:out(Q0),
-                               {_, V2, S} = rabbit_fifo_q:out(S0),
+                               {V1, Q} = case queue:out(Q0) of
+                                             {{value, V_}, Q1} ->
+                                                 {V_, Q1};
+                                             Res0 ->
+                                                 Res0
+                                         end,
+                               {V2, S} = case rabbit_fifo_q:out(S0) of
+                                             {_, V, S1} ->
+                                                 {V, S1};
+                                             Res ->
+                                                 Res
+                                         end,
                                case V1 == V2 of
                                    true ->
                                        {Q, S};
                                    false ->
+                                       ct:pal("V1 ~p, V2 ~p", [V1, V2]),
                                        throw(false)
                                end
                        end, {Que, Sut}, Ops),
@@ -124,7 +172,16 @@ op_gen(Size) ->
                      {20, {in, non_neg_integer()}},
                      {20, out}
                     ]
-                   ))), Ops
+                   ))),
+         begin
+             {_, Ops1} = lists:foldl(
+                           fun ({in, I}, {Idx, Os}) ->
+                                   {Idx + 1, [{in, ?MSG(Idx, I)} | Os]};
+                               (out, {Idx, Os}) ->
+                                   {Idx + 1, [out | Os] }
+                           end, {1, []}, Ops),
+             lists:reverse(Ops1)
+         end
         ).
 
 run_proper(Fun, Args, NumTests) ->
