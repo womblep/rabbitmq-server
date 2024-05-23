@@ -7,7 +7,7 @@
 -module(oauth2_client).
 -export([get_access_token/2, get_expiration_time/1,
         refresh_access_token/2,
-        get_oauth_provider/1, get_oauth_provider/2,
+        get_oauth_provider/1, get_oauth_provider/2, 
         extract_ssl_options_as_list/1
         ]).
 
@@ -102,14 +102,20 @@ do_update_oauth_provider_endpoints_configuration(OAuthProvider) ->
     case OAuthProvider#oauth_provider.token_endpoint of
         undefined ->
             do_nothing;
-        TokenEndPoint ->
-            application:set_env(rabbitmq_auth_backend_oauth2, token_endpoint, TokenEndPoint)
+        TokenEndpoint ->
+            application:set_env(rabbitmq_auth_backend_oauth2, token_endpoint, TokenEndpoint)
     end,
     case OAuthProvider#oauth_provider.authorization_endpoint of
         undefined ->
             do_nothing;
-        AuthzEndPoint ->
-            application:set_env(rabbitmq_auth_backend_oauth2, authorization_endpoint, AuthzEndPoint)
+        AuthzEndpoint ->
+            application:set_env(rabbitmq_auth_backend_oauth2, authorization_endpoint, AuthzEndpoint)
+    end,
+    case OAuthProvider#oauth_provider.end_session_endpoint of
+        undefined ->
+            do_nothing;
+        EndSessionEndpoint ->
+            application:set_env(rabbitmq_auth_backend_oauth2, end_session_endpoint, EndSessionEndpoint)
     end,
     List = application:get_env(rabbitmq_auth_backend_oauth2, key_config, []),
     ModifiedList = case OAuthProvider#oauth_provider.jwks_uri of
@@ -125,17 +131,21 @@ do_update_oauth_provider_endpoints_configuration(OAuthProviderId, OAuthProvider)
     LookupProviderPropList = maps:get(OAuthProviderId, OAuthProviders),
     ModifiedList0 = case OAuthProvider#oauth_provider.token_endpoint of
         undefined ->  LookupProviderPropList;
-        TokenEndPoint -> [{token_endpoint, TokenEndPoint} | LookupProviderPropList]
+        TokenEndpoint -> [{token_endpoint, TokenEndpoint} | LookupProviderPropList]
     end,
     ModifiedList1 = case OAuthProvider#oauth_provider.authorization_endpoint of
         undefined ->  ModifiedList0;
-        AuthzEndPoint -> [{authorization_endpoint, AuthzEndPoint} | ModifiedList0]
+        AuthzEndpoint -> [{authorization_endpoint, AuthzEndpoint} | ModifiedList0]
     end,
-    ModifiedList2 = case OAuthProvider#oauth_provider.jwks_uri of
+    ModifiedList2 = case OAuthProvider#oauth_provider.end_session_endpoint of
         undefined ->  ModifiedList1;
-        JwksEndPoint -> [{jwks_uri, JwksEndPoint} | ModifiedList1]
+        EndSessionEndpoint -> [{end_session_endpoint, EndSessionEndpoint} | ModifiedList1]
     end,
-    ModifiedOAuthProviders = maps:put(OAuthProviderId, ModifiedList2, OAuthProviders),
+    ModifiedList3 = case OAuthProvider#oauth_provider.jwks_uri of
+        undefined ->  ModifiedList2;
+        JwksEndPoint -> [{jwks_uri, JwksEndPoint} | ModifiedList2]
+    end,
+    ModifiedOAuthProviders = maps:put(OAuthProviderId, ModifiedList3, OAuthProviders),
     application:set_env(rabbitmq_auth_backend_oauth2, oauth_providers, ModifiedOAuthProviders),
     rabbit_log:debug("Replacing oauth_providers  ~p", [ ModifiedOAuthProviders]),
     OAuthProvider.
@@ -177,7 +187,7 @@ get_oauth_provider(ListOfRequiredAttributes) ->
         {ok, DefaultOauthProvider} ->
             rabbit_log:debug("Using default_oauth_provider ~p", [DefaultOauthProvider]),
             get_oauth_provider(DefaultOauthProvider, ListOfRequiredAttributes)
-    end.
+    end.    
 
 get_oauth_provider_from_keyconfig(ListOfRequiredAttributes) ->
     OAuthProvider = lookup_oauth_provider_from_keyconfig(),
@@ -204,7 +214,7 @@ get_oauth_provider_from_keyconfig(ListOfRequiredAttributes) ->
                             {ok, OAuthProvider2};
                         _ = Attrs->
                             {error, {missing_oauth_provider_attributes, Attrs}}
-                    end;
+                    end;                        
                 {error, _} = Error3 -> Error3
             end
   end.
@@ -251,7 +261,7 @@ get_oauth_provider(OAuth2ProviderId, ListOfRequiredAttributes) when is_binary(OA
                                     {ok, OAuthProvider2};
                                 _ = Attrs->
                                     {error, {missing_oauth_provider_attributes, Attrs}}
-                            end;
+                            end;                    
                         {error, _} = Error3 -> Error3
                     end
             end
@@ -283,11 +293,15 @@ find_missing_attributes(#oauth_provider{} = OAuthProvider, RequiredAttributes) -
 lookup_oauth_provider_from_keyconfig() ->
     Issuer = application:get_env(rabbitmq_auth_backend_oauth2, issuer, undefined),
     TokenEndpoint = application:get_env(rabbitmq_auth_backend_oauth2, token_endpoint, undefined),
+    AuthorizationEndpoint = application:get_env(rabbitmq_auth_backend_oauth2, authorization_endpoint, undefined),
+    EndSessionEndpoint = application:get_env(rabbitmq_auth_backend_oauth2, end_session_endpoint, undefined),
     Map = maps:from_list(application:get_env(rabbitmq_auth_backend_oauth2, key_config, [])),
     #oauth_provider{
         issuer = Issuer,
         jwks_uri = maps:get(jwks_url, Map, undefined), %% jwks_url not uri . _url is the legacy name
         token_endpoint = TokenEndpoint,
+        authorization_endpoint = AuthorizationEndpoint,
+        end_session_endpoint = EndSessionEndpoint,
         ssl_options = extract_ssl_options_as_list(Map)
     }.
 
@@ -445,6 +459,7 @@ map_to_oauth_provider(Map) when is_map(Map) ->
         issuer = maps:get(?RESPONSE_ISSUER, Map),
         token_endpoint = maps:get(?RESPONSE_TOKEN_ENDPOINT, Map, undefined),
         authorization_endpoint = maps:get(?RESPONSE_AUTHORIZATION_ENDPOINT, Map, undefined),
+        end_session_endpoint = maps:get(?RESPONSE_END_SESSION_ENDPOINT, Map, undefined),
         jwks_uri = maps:get(?RESPONSE_JWKS_URI, Map, undefined)
     };
 
@@ -453,6 +468,7 @@ map_to_oauth_provider(PropList) when is_list(PropList) ->
         issuer = proplists:get_value(issuer, PropList),
         token_endpoint = proplists:get_value(token_endpoint, PropList),
         authorization_endpoint = proplists:get_value(authorization_endpoint, PropList, undefined),
+        end_session_endpoint = proplists:get_value(end_session_endpoint, PropList, undefined),
         jwks_uri = proplists:get_value(jwks_uri, PropList, undefined),
         ssl_options = extract_ssl_options_as_list(maps:from_list(proplists:get_value(https, PropList, [])))
     }.
