@@ -187,7 +187,7 @@ get_oauth_provider(ListOfRequiredAttributes) ->
         {ok, DefaultOauthProvider} ->
             rabbit_log:debug("Using default_oauth_provider ~p", [DefaultOauthProvider]),
             get_oauth_provider(DefaultOauthProvider, ListOfRequiredAttributes)
-    end.    
+    end.
 
 get_oauth_provider_from_keyconfig(ListOfRequiredAttributes) ->
     OAuthProvider = lookup_oauth_provider_from_keyconfig(),
@@ -214,7 +214,7 @@ get_oauth_provider_from_keyconfig(ListOfRequiredAttributes) ->
                             {ok, OAuthProvider2};
                         _ = Attrs->
                             {error, {missing_oauth_provider_attributes, Attrs}}
-                    end;                        
+                    end;
                 {error, _} = Error3 -> Error3
             end
   end.
@@ -261,7 +261,7 @@ get_oauth_provider(OAuth2ProviderId, ListOfRequiredAttributes) when is_binary(OA
                                     {ok, OAuthProvider2};
                                 _ = Attrs->
                                     {error, {missing_oauth_provider_attributes, Attrs}}
-                            end;                    
+                            end;
                         {error, _} = Error3 -> Error3
                     end
             end
