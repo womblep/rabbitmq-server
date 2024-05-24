@@ -168,8 +168,7 @@ groups() ->
         denies_access_token,
         auth_server_error,
         non_json_payload,
-        grants_refresh_token,
-        grants_access_token_using_oauth_provider_id
+        grants_refresh_token        
     ]},
     {verify_get_oauth_provider, [], [
         get_oauth_provider,
@@ -343,15 +342,6 @@ grants_access_token_dynamically_resolving_oauth_provider(Config) ->
     {ok, #successful_access_token_response{access_token = AccessToken, token_type = TokenType} } =
         oauth2_client:get_access_token(?config(oauth_provider_id, Config), build_access_token_request(Parameters)),
 
-    ?assertEqual(proplists:get_value(token_type, JsonPayload), TokenType),
-    ?assertEqual(proplists:get_value(access_token, JsonPayload), AccessToken).
-
-grants_access_token_using_oauth_provider_id(Config) ->
-    #{request := #{parameters := Parameters},
-        response := [ {code, 200}, {content_type, _CT}, {payload, JsonPayload}] } = lookup_expectation(token_endpoint, Config),
-
-    {ok, #successful_access_token_response{access_token = AccessToken, token_type = TokenType} } =
-        oauth2_client:get_access_token(?config(oauth_provider_id, Config), build_access_token_request(Parameters)),
     ?assertEqual(proplists:get_value(token_type, JsonPayload), TokenType),
     ?assertEqual(proplists:get_value(access_token, JsonPayload), AccessToken).
 
