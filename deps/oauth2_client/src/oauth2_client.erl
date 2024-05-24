@@ -14,14 +14,6 @@
 -include("oauth2_client.hrl").
 -spec get_access_token(oauth_provider_id() | oauth_provider(), access_token_request()) ->
     {ok, successful_access_token_response()} | {error, unsuccessful_access_token_response() | any()}.
-get_access_token(OAuth2ProviderId, Request) when is_binary(OAuth2ProviderId) ->
-    rabbit_log:debug("get_access_token using OAuth2ProviderId:~p and client_id:~p",
-    [OAuth2ProviderId, Request#access_token_request.client_id]),
-    case get_oauth_provider(OAuth2ProviderId, [token_endpoint]) of
-        {error, _Error } = Error0 -> Error0;
-        {ok, Provider} -> get_access_token(Provider, Request)
-    end;
-
 get_access_token(OAuthProvider, Request) ->
     rabbit_log:debug("get_access_token using OAuthProvider:~p and client_id:~p",
         [OAuthProvider, Request#access_token_request.client_id]),
